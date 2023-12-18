@@ -1,6 +1,11 @@
 pipeline {
     agent any
 
+    environment {
+        DOCKER_IMAGE = 'frontend-serkan'
+        DOCKER_REGISTRY_CREDENTIALS = 'your-docker-hub-credentials-id'
+    }
+
     stages {
         stage('Install Node.js') {
             steps {
@@ -15,10 +20,8 @@ pipeline {
             steps {
                 script {
                     // Node.js ve npm'i yükle
-                    nodejs('node') {
-                        dir('frontEnd/real-estate') {
-                            sh 'npm install'
-                        }
+                    dir('frontEnd/real-estate') {
+                        sh 'npm install'
                     }
                 }
             }
@@ -48,10 +51,10 @@ pipeline {
             steps {
                 script {
                     // Docker imajını etiketle ve Docker Hub'a pushla
-                    withDockerRegistry([credentialsId: 'DOCKER_REGISTRY_CREDENTIALS', url: 'https://index.docker.io/v1/']) {
-                        def dockerImage = docker.build(env.DOCKER_IMAGE)
+                    withDockerRegistry([credentialsId: DOCKER_REGISTRY_CREDENTIALS, url: 'https://index.docker.io/v1/']) {
+                        def dockerImage = docker.build(DOCKER_IMAGE)
 
-                        dockerImage.push("${env.BUILD_NUMBER}") // Veya başka bir etiket
+                        dockerImage.push("${env.BUILD_NUMBER}")
                         dockerImage.push('latest')
                     }
                 }
