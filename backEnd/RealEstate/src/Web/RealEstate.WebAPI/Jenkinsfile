@@ -1,1 +1,54 @@
-.
+pipeline {
+    agent any
+
+    environment {
+        ASPNETCORE_ENVIRONMENT = 'Production'
+        DOCKER_IMAGE_NAME = 'backend-serkan'
+        DOCKER_REGISTRY_CREDENTIALS = 'dockerhub-credentials' // Jenkins Credential ID for Docker Hub
+    }
+
+    stages {
+        stage('Build') {
+            steps {
+                script {
+                    // .NET Restore, Build, and Publish
+                    sh 'dotnet restore src/Web/RealEstate.WebAPI/RealEstate.WebAPI.csproj'
+                    sh 'dotnet build src/Web/RealEstate.WebAPI/RealEstate.WebAPI.csproj -c Release -o /app/build'
+                    sh 'dotnet publish src/Web/RealEstate.WebAPI/RealEstate.WebAPI.csproj -c Release -o /app/publish /p:UseAppHost=false'
+                }
+            }
+        }
+
+        stage('Docker Build') {
+            steps {
+                script {
+                    // Docker Build
+                    sh "docker build -t $DOCKER_IMAGE_NAME -f Dockerfile ."
+                }
+            }
+        }
+
+        stage('Push image') {
+            steps {
+                script {
+                    // Docker Push with specific tag
+                    withDockerRegistry([credentialsId: DOCKER_REGISTRY_CREDENTIALS, url: '']) {
+                        docker.withRegistry('https://registry.hub.docker.com', DOCKER_REGISTRY_CREDENTIALS) {
+                            dockerImage.push("backend-serkan:latest")
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'CI/CD pipeline completed successfully!'
+        }
+
+        failure {
+            echo 'CI/CD pipeline failed!'
+        }
+    }
+}
