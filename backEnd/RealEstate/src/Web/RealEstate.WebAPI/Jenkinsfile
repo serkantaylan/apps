@@ -5,12 +5,7 @@ pipeline {
         ASPNETCORE_ENVIRONMENT = 'Production'
         DOCKER_IMAGE_NAME = 'backend-serkan'
         DOCKER_REGISTRY_CREDENTIALS = 'dockerhub-credentials' // Jenkins Credential ID for Docker Hub
-        DOTNET_SDK_VERSION = '3.1.415' // .NET SDK version to install
-    }
-
-    tools {
-        // .NET Core SDK tool installation
-        dotnet "${DOTNET_SDK_VERSION}"
+        DOTNET_SDK_VERSION = '3.1' // .NET SDK version to install
     }
 
     stages {
@@ -24,10 +19,15 @@ pipeline {
         stage('Build') {
             steps {
                 script {
+                    // Install .NET SDK
+                    sh "wget https://dot.net/v1/dotnet-install.sh -O /tmp/dotnet-install.sh"
+                    sh "chmod +x /tmp/dotnet-install.sh"
+                    sh "/tmp/dotnet-install.sh --version ${DOTNET_SDK_VERSION} --install-dir /usr/share/dotnet"
+
                     // .NET Restore, Build, and Publish
-                    sh 'dotnet restore src/Web/RealEstate.WebAPI/RealEstate.WebAPI.csproj'
-                    sh 'dotnet build src/Web/RealEstate.WebAPI/RealEstate.WebAPI.csproj -c Release -o /app/build'
-                    sh 'dotnet publish src/Web/RealEstate.WebAPI/RealEstate.WebAPI.csproj -c Release -o /app/publish /p:UseAppHost=false'
+                    sh '/usr/share/dotnet/dotnet restore src/Web/RealEstate.WebAPI/RealEstate.WebAPI.csproj'
+                    sh '/usr/share/dotnet/dotnet build src/Web/RealEstate.WebAPI/RealEstate.WebAPI.csproj -c Release -o /app/build'
+                    sh '/usr/share/dotnet/dotnet publish src/Web/RealEstate.WebAPI/RealEstate.WebAPI.csproj -c Release -o /app/publish /p:UseAppHost=false'
                 }
             }
         }
