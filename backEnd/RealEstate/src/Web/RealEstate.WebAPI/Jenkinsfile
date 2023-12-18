@@ -5,6 +5,8 @@ pipeline {
         ASPNETCORE_ENVIRONMENT = 'Production'
         DOCKER_IMAGE_NAME = 'backend-serkan'
         DOCKER_REGISTRY_CREDENTIALS = 'dockerhub-credentials' // Jenkins Credential ID for Docker Hub
+        DOTNET_SDK_VERSION = '3.1.407' // Önceki bir zaman damgasına göre sürüm
+        DOTNET_INSTALL_DIR = "${JENKINS_HOME}/tools/dotnet" // Install directory for .NET SDK
     }
 
     stages {
@@ -18,15 +20,16 @@ pipeline {
         stage('Build') {
             steps {
                 script {
-                    // Install .NET SDK without sudo
-                    sh 'wget https://dot.net/v1/dotnet-install.sh -O /tmp/dotnet-install.sh'
-                    sh 'chmod +x /tmp/dotnet-install.sh'
-                    sh '/tmp/dotnet-install.sh --version 3.1 --install-dir /var/lib/jenkins/tools/dotnet'
+                    // Install .NET SDK
+                    sh "mkdir -p ${DOTNET_INSTALL_DIR}"
+                    sh "wget https://dot.net/v1/dotnet-install.sh -O /tmp/dotnet-install.sh"
+                    sh "chmod +x /tmp/dotnet-install.sh"
+                    sh "/tmp/dotnet-install.sh --version ${DOTNET_SDK_VERSION} --install-dir ${DOTNET_INSTALL_DIR}"
 
                     // .NET Restore, Build, and Publish
-                    sh '/var/lib/jenkins/tools/dotnet/dotnet restore src/Web/RealEstate.WebAPI/RealEstate.WebAPI.csproj'
-                    sh '/var/lib/jenkins/tools/dotnet/dotnet build src/Web/RealEstate.WebAPI/RealEstate.WebAPI.csproj -c Release -o /app/build'
-                    sh '/var/lib/jenkins/tools/dotnet/dotnet publish src/Web/RealEstate.WebAPI/RealEstate.WebAPI.csproj -c Release -o /app/publish /p:UseAppHost=false'
+                    sh "${DOTNET_INSTALL_DIR}/dotnet restore src/Web/RealEstate.WebAPI/RealEstate.WebAPI.csproj"
+                    sh "${DOTNET_INSTALL_DIR}/dotnet build src/Web/RealEstate.WebAPI/RealEstate.WebAPI.csproj -c Release -o /app/build"
+                    sh "${DOTNET_INSTALL_DIR}/dotnet publish src/Web/RealEstate.WebAPI/RealEstate.WebAPI.csproj -c Release -o /app/publish /p:UseAppHost=false"
                 }
             }
         }
