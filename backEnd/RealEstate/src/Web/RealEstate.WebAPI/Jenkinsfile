@@ -5,9 +5,22 @@ pipeline {
         ASPNETCORE_ENVIRONMENT = 'Production'
         DOCKER_IMAGE_NAME = 'backend-serkan'
         DOCKER_REGISTRY_CREDENTIALS = 'dockerhub-credentials' // Jenkins Credential ID for Docker Hub
+        DOTNET_SDK_VERSION = '3.1.415' // .NET SDK version to install
+    }
+
+    tools {
+        // .NET Core SDK tool installation
+        dotnet "${DOTNET_SDK_VERSION}"
     }
 
     stages {
+        stage('Checkout') {
+            steps {
+                // Check out the source code from the Git repository
+                checkout scm
+            }
+        }
+
         stage('Build') {
             steps {
                 script {
