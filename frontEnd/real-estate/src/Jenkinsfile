@@ -1,0 +1,47 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('Install Dependencies') {
+            steps {
+                script {
+                    // Node.js ve npm'i yükle
+                    nodejs('node') {
+                        dir('frontEnd/real-estate') {
+                            sh 'npm install'
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Build') {
+            steps {
+                script {
+                    // Uygulamayı derle
+                    dir('frontEnd/real-estate') {
+                        sh 'npm run build'
+                    }
+                }
+            }
+        }
+
+        stage('Archive Build Artifacts') {
+            steps {
+                script {
+                    // Derlenen dosyaları bir tar dosyasına arşivle
+                    archiveArtifacts 'frontEnd/real-estate/build/**/*'
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'CI/CD pipeline succeeded!'
+        }
+        failure {
+            echo 'CI/CD pipeline failed!'
+        }
+    }
+}
