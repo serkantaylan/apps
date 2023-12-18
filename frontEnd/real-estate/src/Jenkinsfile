@@ -21,7 +21,11 @@ pipeline {
                 script {
                     // Node.js ve npm'i yükle
                     dir('frontEnd/real-estate') {
-                        sh 'npm install'
+                        script {
+                            def nodejsHome = tool 'node'
+                            env.PATH = "${nodejsHome}/bin:${env.PATH}"
+                            sh 'npm install'
+                        }
                     }
                 }
             }
