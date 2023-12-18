@@ -2,11 +2,9 @@ pipeline {
     agent any
 
     environment {
-        ASPNETCORE_ENVIRONMENT = 'Production'
         DOCKER_IMAGE_NAME = 'backend-serkan'
-        DOCKER_REGISTRY_CREDENTIALS = 'dockerhub-credentials' // Jenkins Credential ID for Docker Hub
-        DOTNET_SDK_VERSION = '3.1.407' // Önceki bir zaman damgasına göre sürüm
-        DOTNET_INSTALL_DIR = "${JENKINS_HOME}/tools/dotnet" // Install directory for .NET SDK
+        DOCKER_HUB_PROJECT_NAME = 'marstechnology'
+        DOCKER_REGISTRY_CREDENTIALS = 'dockerhubaccount' // Jenkins Credential ID for Docker Hub
     }
 
     stages {
@@ -17,49 +15,23 @@ pipeline {
             }
         }
 
-        stage('Install libssl Dependencies') {
+        stage('Build Docker Image') {
             steps {
                 script {
-                    // Install libssl dependencies
-                    sh 'sudo apt-get update'
-                    sh 'sudo apt-get install -y libssl1.1 libssl-dev'
+                    // Build Docker image using Dockerfile
+                    def dockerImage = docker.build("${DOCKER_HUB_PROJECT_NAME}/${DOCKER_IMAGE_NAME}:latest", "--file backEnd/RealEstate/src/Web/RealEstate.WebAPI/Dockerfile .")
                 }
             }
         }
 
-        stage('Build') {
+        stage('Push image to Docker Hub') {
             steps {
                 script {
-                    // Install .NET SDK
-                    sh "mkdir -p ${DOTNET_INSTALL_DIR}"
-                    sh "wget https://dot.net/v1/dotnet-install.sh -O /tmp/dotnet-install.sh"
-                    sh "chmod +x /tmp/dotnet-install.sh"
-                    sh "/tmp/dotnet-install.sh --version ${DOTNET_SDK_VERSION} --install-dir ${DOTNET_INSTALL_DIR}"
-
-                    // .NET Restore, Build, and Publish
-                    sh "${DOTNET_INSTALL_DIR}/dotnet restore src/Web/RealEstate.WebAPI/RealEstate.WebAPI.csproj"
-                    sh "${DOTNET_INSTALL_DIR}/dotnet build src/Web/RealEstate.WebAPI/RealEstate.WebAPI.csproj -c Release -o /app/build"
-                    sh "${DOTNET_INSTALL_DIR}/dotnet publish src/Web/RealEstate.WebAPI/RealEstate.WebAPI.csproj -c Release -o /app/publish /p:UseAppHost=false"
-                }
-            }
-        }
-
-        stage('Docker Build') {
-            steps {
-                script {
-                    // Docker Build
-                    sh "docker build -t $DOCKER_IMAGE_NAME -f Dockerfile ."
-                }
-            }
-        }
-
-        stage('Push image') {
-            steps {
-                script {
-                    // Docker Push with specific tag
-                    withDockerRegistry([credentialsId: DOCKER_REGISTRY_CREDENTIALS, url: '']) {
-                        docker.withRegistry('https://registry.hub.docker.com', DOCKER_REGISTRY_CREDENTIALS) {
-                            dockerImage.push("backend-serkan:latest")
+                    // Docker Push with specific tag and 'latest'
+                    withDockerRegistry([credentialsId: DOCKER_REGISTRY_CREDENTIALS, url: 'https://index.docker.io/v1/']) {
+                        docker.withRegistry('https://index.docker.io/v1/', DOCKER_REGISTRY_CREDENTIALS) {
+                            dockerImage.push()
+                            dockerImage.push('latest')
                         }
                     }
                 }
