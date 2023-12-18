@@ -34,6 +34,18 @@ pipeline {
                 }
             }
         }
+
+        stage('Tag and Push image to Docker Hub') {
+            steps {
+                script {
+                    // Docker imajını etiketle ve Docker Hub'a pushla
+                    def dockerImage = docker.build(env.DOCKER_IMAGE)
+
+                    dockerImage.push("${env.BUILD_NUMBER}") // Veya başka bir etiket
+                    dockerImage.push('latest')
+                }
+            }
+        }
     }
 
     post {
